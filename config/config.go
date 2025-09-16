@@ -37,7 +37,7 @@ type Config struct {
 
 func Load() (*Config, error) {
 	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
+	viper.SetConfigType("yml")
 	viper.AddConfigPath(".")
 
 	viper.SetDefault("app.name", "user-activity-tracker")

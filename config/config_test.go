@@ -54,7 +54,7 @@ func TestLoadConfig(t *testing.T) {
 			os.Unsetenv("APP_LOGGING_LEVEL")
 		}()
 
-		viper.SetConfigFile("../config.yaml")
+		viper.SetConfigFile("../config.yml")
 
 		cfg, err := Load()
 		assert.NoError(t, err)
@@ -67,7 +67,7 @@ func TestLoadConfig(t *testing.T) {
 	t.Run("Non existent config file", func(t *testing.T) {
 		viper.Reset()
 
-		viper.SetConfigFile("non-existent-config.yaml")
+		viper.SetConfigFile("non-existent-config.yml")
 
 		_, err := Load()
 		if err == nil {
