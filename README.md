@@ -1,2 +1,2 @@
 # kafka-user-activity-tracker
-Activity tracker using Kafke
+Activity tracker using Kafka
