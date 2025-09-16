@@ -1,0 +1,18 @@
+app:
+  name: "user-activity-tracker"
+  version: "1.0.0"
+  environment: "development"
+
+server:
+  port: 8080
+  host: "localhost"
+
+kafka:
+  brokers:
+    - "localhost:9092"
+  topic: "user-activity"
+  group_id: "activity-consumer"
+
+logging:
+  level: "info"
+  format: "json"

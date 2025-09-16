@@ -6,21 +6,29 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v3"
 )
 
-func getExpectedConfigFromFile(t *testing.T) *Config {
-	data, err := os.ReadFile("../config.yaml")
-	if err != nil {
-		t.Fatalf("Failed to read config.yaml: %v", err)
+func getExpectedConfigFromFile() *Config {
+	return &Config{
+		App: AppConfig{
+			Name:        "user-activity-tracker",
+			Version:     "1.0.0",
+			Environment: "development",
+		},
+		Server: ServerConfig{
+			Port: 8080,
+			Host: "localhost",
+		},
+		Kafka: KafkaConfig{
+			Brokers: []string{"localhost:9092"},
+			Topic:   "user-activity",
+			GroupID: "activity-consumer",
+		},
+		Logging: LoggingConfig{
+			Level:  "info",
+			Format: "json",
+		},
 	}
-
-	var config Config
-	if err := yaml.Unmarshal(data, &config); err != nil {
-		t.Fatalf("Failed to unmarshal config.yaml: %v", err)
-	}
-
-	return &config
 }
 
 func TestLoadConfig(t *testing.T) {
@@ -30,7 +38,7 @@ func TestLoadConfig(t *testing.T) {
 		cfg, err := Load()
 		assert.NoError(t, err)
 
-		expected := getExpectedConfigFromFile(t)
+		expected := getExpectedConfigFromFile()
 		assert.Equal(t, expected, cfg)
 	})
 
@@ -80,7 +88,7 @@ func TestLoadConfig(t *testing.T) {
 		cfg, err := Load()
 		assert.NoError(t, err)
 
-		expected := getExpectedConfigFromFile(t)
+		expected := getExpectedConfigFromFile()
 		assert.Equal(t, expected.App.Name, cfg.App.Name)
 		assert.Equal(t, expected.App.Version, cfg.App.Version)
 		assert.Equal(t, expected.App.Environment, cfg.App.Environment)
