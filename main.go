@@ -8,8 +8,16 @@ import (
 	"go.uber.org/zap"
 )
 
-func initLogger() *zap.Logger {
-	logger, err := zap.NewProduction()
+func initLogger(cfg *config.Config) *zap.Logger {
+	var logger *zap.Logger
+	var err error
+
+	if cfg.App.Environment == "development" {
+		logger, err = zap.NewDevelopment()
+	} else {
+		logger, err = zap.NewProduction()
+	}
+
 	if err != nil {
 		panic(fmt.Sprintf("Failed to initialize logger: %v", err))
 	}
@@ -17,13 +25,14 @@ func initLogger() *zap.Logger {
 }
 
 func main() {
-	logger := initLogger()
-	defer logger.Sync()
-
 	cfg, err := config.Load()
 	if err != nil {
-		logger.Fatal("Failed to load configuration", zap.Error(err))
+		fmt.Printf("Failed to load configuration: %v\n", err)
+		return
 	}
+
+	logger := initLogger(cfg)
+	defer logger.Sync()
 
 	logger.Info("Configuration loaded successfully")
 
