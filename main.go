@@ -49,6 +49,8 @@ func main() {
 		zap.String("log_format", cfg.Logging.Format),
 	)
 
+	initKafkaTopics(DefaultDialer{}, cfg.Kafka.Brokers)
+
 	logger.Info("Application started successfully",
 		zap.String("app_name", cfg.App.Name),
 		zap.String("version", cfg.App.Version),
