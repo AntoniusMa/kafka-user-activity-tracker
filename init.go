@@ -2,15 +2,16 @@ package main
 
 import (
 	"context"
+	"kafka-activity-tracker/models"
 	"log"
 
 	"github.com/segmentio/kafka-go"
 )
 
 var basicTopics = []kafka.TopicConfig{
-	{Topic: "user-logins", NumPartitions: 3},
-	{Topic: "page-views", NumPartitions: 2},
-	{Topic: "user-actions", NumPartitions: 1}}
+	{Topic: models.EventTopicMap[models.LOGIN], NumPartitions: 3},
+	{Topic: models.EventTopicMap[models.PAGE_VIEWS], NumPartitions: 2},
+	{Topic: models.EventTopicMap[models.USER_ACTION], NumPartitions: 1}}
 
 type KafkaConn interface {
 	CreateTopics(topics ...kafka.TopicConfig) error
