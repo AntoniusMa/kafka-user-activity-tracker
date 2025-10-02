@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"kafka-activity-tracker/models"
+	"kafka-activity-tracker/domain"
 	"testing"
 	"time"
 
@@ -64,9 +64,9 @@ func TestNewConsumer(t *testing.T) {
 func TestConsumeMessages(t *testing.T) {
 	t.Run("Consume single message successfully", func(t *testing.T) {
 		t.Parallel()
-		userEvent := models.UserEvent{
+		userEvent := domain.UserEvent{
 			Timestamp: time.Now(),
-			Type:      models.LOGIN,
+			Type:      domain.LOGIN,
 		}
 		eventData, err := json.Marshal(userEvent)
 		require.NoError(t, err)
@@ -85,9 +85,9 @@ func TestConsumeMessages(t *testing.T) {
 		defer cancel()
 
 		handlerCallCount := 0
-		handler := func(event *models.UserEvent) error {
+		handler := func(event *domain.UserEvent) error {
 			handlerCallCount++
-			require.Equal(t, models.LOGIN, event.Type)
+			require.Equal(t, domain.LOGIN, event.Type)
 			cancel() // Cancel context to exit consume loop
 			return nil
 		}
@@ -108,7 +108,7 @@ func TestConsumeMessages(t *testing.T) {
 		defer cancel()
 
 		handlerCallCount := 0
-		handler := func(event *models.UserEvent) error {
+		handler := func(event *domain.UserEvent) error {
 			handlerCallCount++
 			return nil
 		}
@@ -133,7 +133,7 @@ func TestConsumeMessages(t *testing.T) {
 		defer cancel()
 
 		handlerCallCount := 0
-		handler := func(event *models.UserEvent) error {
+		handler := func(event *domain.UserEvent) error {
 			handlerCallCount++
 			return nil
 		}
@@ -144,9 +144,9 @@ func TestConsumeMessages(t *testing.T) {
 
 	t.Run("Handle handler error", func(t *testing.T) {
 		t.Parallel()
-		userEvent := models.UserEvent{
+		userEvent := domain.UserEvent{
 			Timestamp: time.Now(),
-			Type:      models.LOGIN,
+			Type:      domain.LOGIN,
 		}
 		eventData, err := json.Marshal(userEvent)
 		require.NoError(t, err)
@@ -166,7 +166,7 @@ func TestConsumeMessages(t *testing.T) {
 
 		handlerCallCount := 0
 		handlerError := errors.New("handler error")
-		handler := func(event *models.UserEvent) error {
+		handler := func(event *domain.UserEvent) error {
 			handlerCallCount++
 			cancel() // Cancel context to exit consume loop
 			return handlerError
@@ -178,9 +178,9 @@ func TestConsumeMessages(t *testing.T) {
 
 	t.Run("Handle commit error", func(t *testing.T) {
 		t.Parallel()
-		userEvent := models.UserEvent{
+		userEvent := domain.UserEvent{
 			Timestamp: time.Now(),
-			Type:      models.LOGIN,
+			Type:      domain.LOGIN,
 		}
 		eventData, err := json.Marshal(userEvent)
 		require.NoError(t, err)
@@ -200,7 +200,7 @@ func TestConsumeMessages(t *testing.T) {
 		defer cancel()
 
 		handlerCallCount := 0
-		handler := func(event *models.UserEvent) error {
+		handler := func(event *domain.UserEvent) error {
 			handlerCallCount++
 			cancel() // Cancel context to exit consume loop
 			return nil
@@ -240,9 +240,9 @@ func TestClose(t *testing.T) {
 func TestUnmarshalUserEvent(t *testing.T) {
 	t.Run("Unmarshal valid JSON", func(t *testing.T) {
 		t.Parallel()
-		userEvent := models.UserEvent{
+		userEvent := domain.UserEvent{
 			Timestamp: time.Now(),
-			Type:      models.PAGE_VIEWS,
+			Type:      domain.PAGE_VIEWS,
 		}
 		data, err := json.Marshal(userEvent)
 		require.NoError(t, err)

@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"kafka-activity-tracker/domain"
 	"kafka-activity-tracker/internal/kafka"
-	"kafka-activity-tracker/models"
 	"testing"
 	"time"
 
@@ -12,13 +12,13 @@ import (
 )
 
 type MockSessionRepository struct {
-	userEvents map[models.UserEventType][]*models.UserEvent
+	userEvents map[domain.UserEventType][]*domain.UserEvent
 }
 
 type MockConsumer struct {
 	brokers []string
 	topic   string
-	events  []models.UserEvent
+	events  []domain.UserEvent
 }
 
 func (c *MockConsumer) ConsumeMessages(ctx context.Context, handler kafka.MessageHandler) error {
@@ -47,12 +47,12 @@ func (c *MockConsumer) Close() error {
 	return nil
 }
 
-func (msr *MockSessionRepository) TrackUserAction(userAction *models.UserEvent) error {
+func (msr *MockSessionRepository) TrackUserAction(userAction *domain.UserEvent) error {
 	if msr.userEvents == nil {
-		msr.userEvents = make(map[models.UserEventType][]*models.UserEvent)
+		msr.userEvents = make(map[domain.UserEventType][]*domain.UserEvent)
 	}
 	if msr.userEvents[userAction.Type] == nil {
-		msr.userEvents[userAction.Type] = []*models.UserEvent{}
+		msr.userEvents[userAction.Type] = []*domain.UserEvent{}
 	}
 	msr.userEvents[userAction.Type] = append(msr.userEvents[userAction.Type], userAction)
 	return nil
@@ -73,28 +73,28 @@ func TestNewEventConsumerService(t *testing.T) {
 	service := NewEventConsumerService(&repo, consumerFactory)
 
 	expectedConsumerTopics := []string{}
-	for _, value := range models.EventTopicMap {
+	for _, value := range domain.EventTopicMap {
 		expectedConsumerTopics = append(expectedConsumerTopics, value)
 	}
 	require.NotNil(t, service)
 	require.Equal(t, &repo, service.sessionRepository)
-	require.Len(t, capturedConsumerTopics, len(models.EventTopicMap))
+	require.Len(t, capturedConsumerTopics, len(domain.EventTopicMap))
 	require.ElementsMatch(t, capturedConsumerTopics, expectedConsumerTopics)
 }
 
 func TestListenForUserEvents(t *testing.T) {
 	testCases := []struct {
 		topic         string
-		expectedEvent models.UserEvent
+		expectedEvent domain.UserEvent
 	}{}
 	eventTime := time.Now()
 	userID := "testUser"
 
-	for key, topic := range models.EventTopicMap {
+	for key, topic := range domain.EventTopicMap {
 		testCases = append(testCases, struct {
 			topic         string
-			expectedEvent models.UserEvent
-		}{topic: topic, expectedEvent: models.UserEvent{Timestamp: eventTime, Type: key, UserID: userID}})
+			expectedEvent domain.UserEvent
+		}{topic: topic, expectedEvent: domain.UserEvent{Timestamp: eventTime, Type: key, UserID: userID}})
 	}
 
 	for _, testCase := range testCases {
@@ -102,7 +102,7 @@ func TestListenForUserEvents(t *testing.T) {
 			t.Parallel()
 			repo := MockSessionRepository{}
 			var consumerFactory func(brokers []string, topic string) kafka.Consumer
-			numMessages := map[models.UserEventType]int{}
+			numMessages := map[domain.UserEventType]int{}
 			numMessages[testCase.expectedEvent.Type] = 1
 			consumerFactory = createConsumerFactory(t, userID, numMessages, eventTime)
 			service := NewEventConsumerService(&repo, consumerFactory)
@@ -110,7 +110,7 @@ func TestListenForUserEvents(t *testing.T) {
 			ctx, close := context.WithTimeout(context.Background(), 50*time.Millisecond)
 			defer close()
 
-			// this call blocks until context times out
+			// this call blocks until context times out or is closed
 			service.ListenForUserEvents(ctx)
 
 			require.Len(t, repo.userEvents[testCase.expectedEvent.Type], 1)
@@ -125,28 +125,28 @@ func TestListenForUserEvents(t *testing.T) {
 	}
 }
 
-func createConsumerFactory(t testing.TB, testUserID string, numMessagesForEvent map[models.UserEventType]int, eventTime time.Time) func(brokers []string, topic string) kafka.Consumer {
+func createConsumerFactory(t testing.TB, testUserID string, numMessagesForEvent map[domain.UserEventType]int, eventTime time.Time) func(brokers []string, topic string) kafka.Consumer {
 	t.Helper()
 	return func(brokers []string, topic string) kafka.Consumer {
-		events := []models.UserEvent{}
+		events := []domain.UserEvent{}
 		// generate events, a consumer will only ever have events of one type, as each event is mapped to a different topic and each consumer only consumes one topic
 		switch topic {
-		case models.EventTopicMap[models.LOGIN]:
+		case domain.EventTopicMap[domain.LOGIN]:
 			{
-				for range numMessagesForEvent[models.LOGIN] {
-					events = append(events, models.UserEvent{Timestamp: eventTime, Type: models.LOGIN, UserID: testUserID})
+				for range numMessagesForEvent[domain.LOGIN] {
+					events = append(events, domain.UserEvent{Timestamp: eventTime, Type: domain.LOGIN, UserID: testUserID})
 				}
 			}
-		case models.EventTopicMap[models.PAGE_VIEWS]:
+		case domain.EventTopicMap[domain.PAGE_VIEWS]:
 			{
-				for range numMessagesForEvent[models.PAGE_VIEWS] {
-					events = append(events, models.UserEvent{Timestamp: eventTime, Type: models.PAGE_VIEWS, UserID: testUserID})
+				for range numMessagesForEvent[domain.PAGE_VIEWS] {
+					events = append(events, domain.UserEvent{Timestamp: eventTime, Type: domain.PAGE_VIEWS, UserID: testUserID})
 				}
 			}
 		default:
 			{
-				for range numMessagesForEvent[models.USER_ACTION] {
-					events = append(events, models.UserEvent{Timestamp: eventTime, Type: models.USER_ACTION, UserID: testUserID})
+				for range numMessagesForEvent[domain.USER_ACTION] {
+					events = append(events, domain.UserEvent{Timestamp: eventTime, Type: domain.USER_ACTION, UserID: testUserID})
 				}
 			}
 		}

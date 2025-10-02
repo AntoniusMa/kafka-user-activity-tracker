@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"kafka-activity-tracker/models"
+	"kafka-activity-tracker/domain"
 	"strconv"
 	"testing"
 	"time"
@@ -15,7 +15,7 @@ import (
 type MockPublishedEvent struct {
 	Topic string
 	Key   string
-	msg   models.UserEvent
+	msg   domain.UserEvent
 }
 
 type MockKafkaProducer struct {
@@ -33,7 +33,7 @@ func (m *MockKafkaProducer) PublishJSON(ctx context.Context, topic, key string, 
 	}
 
 	for _, msg := range msgs {
-		castMessage, ok := msg.(models.UserEvent)
+		castMessage, ok := msg.(domain.UserEvent)
 		if !ok {
 			return errors.New("msg was not a user event")
 		}
@@ -54,20 +54,20 @@ func TestNewUserEventService(t *testing.T) {
 
 func TestSendUserEvent(t *testing.T) {
 	testCases := []struct {
-		Event       models.UserEvent
+		Event       domain.UserEvent
 		TargetTopic string
 	}{
 		{
-			Event:       models.UserEvent{Timestamp: time.Now(), Type: models.LOGIN},
-			TargetTopic: models.EventTopicMap[models.LOGIN],
+			Event:       domain.UserEvent{Timestamp: time.Now(), Type: domain.LOGIN},
+			TargetTopic: domain.EventTopicMap[domain.LOGIN],
 		},
 		{
-			Event:       models.UserEvent{Timestamp: time.Now(), Type: models.PAGE_VIEWS},
-			TargetTopic: models.EventTopicMap[models.PAGE_VIEWS],
+			Event:       domain.UserEvent{Timestamp: time.Now(), Type: domain.PAGE_VIEWS},
+			TargetTopic: domain.EventTopicMap[domain.PAGE_VIEWS],
 		},
 		{
-			Event:       models.UserEvent{Timestamp: time.Now(), Type: models.USER_ACTION},
-			TargetTopic: models.EventTopicMap[models.USER_ACTION],
+			Event:       domain.UserEvent{Timestamp: time.Now(), Type: domain.USER_ACTION},
+			TargetTopic: domain.EventTopicMap[domain.USER_ACTION],
 		},
 	}
 
@@ -93,7 +93,7 @@ func TestSendUserEvent(t *testing.T) {
 		expectedError := errors.New("publish error")
 		producer.publishError = expectedError
 		service := NewUserEventService(&producer)
-		err := service.SendUserEvent(1, models.UserEvent{})
+		err := service.SendUserEvent(1, domain.UserEvent{})
 		require.ErrorIs(t, err, expectedError)
 	})
 }

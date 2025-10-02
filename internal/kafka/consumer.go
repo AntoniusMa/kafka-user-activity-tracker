@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"kafka-activity-tracker/models"
+	"kafka-activity-tracker/domain"
 	"log"
 
 	"github.com/segmentio/kafka-go"
@@ -21,7 +21,7 @@ type Consumer interface {
 	Close() error
 }
 
-type MessageHandler func(event *models.UserEvent) error
+type MessageHandler func(event *domain.UserEvent) error
 
 type consumer struct {
 	reader KafkaReader
@@ -88,8 +88,8 @@ func (c *consumer) Close() error {
 	return nil
 }
 
-func unmarshalUserEvent(data []byte) (*models.UserEvent, error) {
-	var event models.UserEvent
+func unmarshalUserEvent(data []byte) (*domain.UserEvent, error) {
+	var event domain.UserEvent
 	err := json.Unmarshal(data, &event)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal user event: %w", err)

@@ -2,43 +2,49 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/viper"
 )
 
 type AppConfig struct {
-	Name        string `yaml:"name"`
-	Version     string `yaml:"version"`
-	Environment string `yaml:"environment"`
+	Name        string `mapstructure:"name"`
+	Version     string `mapstructure:"version"`
+	Environment string `mapstructure:"environment"`
 }
 
 type ServerConfig struct {
-	Port int    `yaml:"port"`
-	Host string `yaml:"host"`
+	Port int    `mapstructure:"port"`
+	Host string `mapstructure:"host"`
 }
 
 type KafkaConfig struct {
-	Brokers []string `yaml:"brokers"`
-	Topic   string   `yaml:"topic"`
-	GroupID string   `yaml:"group_id"`
+	Brokers []string `mapstructure:"brokers"`
+	Topic   string   `mapstructure:"topic"`
+	GroupID string   `mapstructure:"group_id"`
 }
 
 type LoggingConfig struct {
-	Level  string `yaml:"level"`
-	Format string `yaml:"format"`
+	Level  string `mapstructure:"level"`
+	Format string `mapstructure:"format"`
 }
 
 type Config struct {
-	App     AppConfig     `yaml:"app"`
-	Server  ServerConfig  `yaml:"server"`
-	Kafka   KafkaConfig   `yaml:"kafka"`
-	Logging LoggingConfig `yaml:"logging"`
+	App     AppConfig     `mapstructure:"app"`
+	Server  ServerConfig  `mapstructure:"server"`
+	Kafka   KafkaConfig   `mapstructure:"kafka"`
+	Logging LoggingConfig `mapstructure:"logging"`
 }
 
-func Load() (*Config, error) {
-	viper.SetConfigName("config")
+func Load(configPath ...string) (*Config, error) {
 	viper.SetConfigType("yml")
-	viper.AddConfigPath(".")
+	if len(configPath) == 0 || configPath[0] == "" {
+		viper.SetConfigName("config")
+		viper.AddConfigPath("../")
+		viper.AddConfigPath(".")
+	} else {
+		viper.SetConfigFile(configPath[0])
+	}
 
 	viper.SetDefault("app.name", "user-activity-tracker")
 	viper.SetDefault("app.version", "1.0.0")
@@ -53,6 +59,7 @@ func Load() (*Config, error) {
 	}
 
 	viper.SetEnvPrefix("APP")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
 	var config Config
