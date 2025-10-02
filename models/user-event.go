@@ -11,6 +11,7 @@ const (
 )
 
 type UserEvent struct {
+	UserID    string        `json:"userID"`
 	Timestamp time.Time     `json:"timestamp"`
 	Type      UserEventType `json:"type"`
 }
