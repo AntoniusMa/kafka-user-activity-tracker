@@ -13,6 +13,14 @@ kafka:
   topic: "user-activity"
   group_id: "activity-consumer"
 
+database:
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: "postgres"
+  dbname: "user_activity"
+  sslmode: "disable"
+
 logging:
   level: "info"
   format: "json"

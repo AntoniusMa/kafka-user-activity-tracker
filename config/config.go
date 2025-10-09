@@ -29,11 +29,21 @@ type LoggingConfig struct {
 	Format string `mapstructure:"format"`
 }
 
+type DatabaseConfig struct {
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+	DBName   string `mapstructure:"dbname"`
+	SSLMode  string `mapstructure:"sslmode"`
+}
+
 type Config struct {
-	App     AppConfig     `mapstructure:"app"`
-	Server  ServerConfig  `mapstructure:"server"`
-	Kafka   KafkaConfig   `mapstructure:"kafka"`
-	Logging LoggingConfig `mapstructure:"logging"`
+	App      AppConfig      `mapstructure:"app"`
+	Server   ServerConfig   `mapstructure:"server"`
+	Kafka    KafkaConfig    `mapstructure:"kafka"`
+	Database DatabaseConfig `mapstructure:"database"`
+	Logging  LoggingConfig  `mapstructure:"logging"`
 }
 
 func Load(configPath ...string) (*Config, error) {

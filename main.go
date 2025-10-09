@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"kafka-activity-tracker/config"
+	"kafka-activity-tracker/internal/services/user"
+	"kafka-activity-tracker/internal/storage/pgsql"
 
 	"go.uber.org/zap"
 )
@@ -49,6 +52,19 @@ func main() {
 		zap.String("log_format", cfg.Logging.Format),
 	)
 
+	// Initialize database
+
+	db, err := initDatabase(cfg, logger)
+	if err != nil {
+		logger.Fatal("Failed to initialize database", zap.Error(err))
+		return
+	}
+	defer db.Close()
+
+	// Initialize user repository and service
+	userRepo := pgsql.NewUserAdapter(db, logger)
+	userService := user.NewUserService(userRepo, logger)
+
 	initKafkaTopics(DefaultDialer{}, cfg.Kafka.Brokers)
 
 	logger.Info("Application started successfully",
@@ -56,4 +72,13 @@ func main() {
 		zap.String("version", cfg.App.Version),
 		zap.String("environment", cfg.App.Environment),
 	)
+
+	// Fetch and display a test user
+	ctx := context.Background()
+	testUser, err := userService.GetUserByID(ctx, "test-001")
+	if err != nil {
+		logger.Error("Failed to get test user", zap.Error(err))
+	} else {
+		logger.Info("Successfully fetched user", zap.Any("user", testUser))
+	}
 }
