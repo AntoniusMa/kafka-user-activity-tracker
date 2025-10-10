@@ -1,9 +1,8 @@
-package userevents
+package consumers
 
 import (
 	"context"
 	"kafka-activity-tracker/domain"
-	"kafka-activity-tracker/internal/kafka"
 	"sync"
 )
 
@@ -12,12 +11,12 @@ type SessionRepository interface {
 }
 
 type EventConsumerService struct {
-	consumers         []kafka.Consumer
+	consumers         []Consumer
 	sessionRepository SessionRepository
 }
 
-func NewEventConsumerService(repo SessionRepository, consumerFactory func(brokers []string, topic string) kafka.Consumer) EventConsumerService {
-	consumers := []kafka.Consumer{}
+func NewEventConsumerService(repo SessionRepository, consumerFactory func(brokers []string, topic string) Consumer) EventConsumerService {
+	consumers := []Consumer{}
 	for _, topic := range domain.EventTopicMap {
 		consumers = append(consumers, consumerFactory([]string{"localhost:8000"}, topic))
 	}

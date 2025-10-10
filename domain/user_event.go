@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type UserEventType string
 
@@ -11,9 +14,15 @@ const (
 )
 
 type UserEvent struct {
+	ID        string        `json:"id"`
 	UserID    string        `json:"userID"`
 	Timestamp time.Time     `json:"timestamp"`
 	Type      UserEventType `json:"type"`
+}
+
+type UserEventRepository interface {
+	TrackUserEvent(ctx context.Context, event *UserEvent) (*UserEvent, error)
+	GetEventsForUser(ctx context.Context, userID string) ([]*UserEvent, error)
 }
 
 var EventTopicMap = map[UserEventType]string{

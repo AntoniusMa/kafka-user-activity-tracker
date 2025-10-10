@@ -1,9 +1,8 @@
-package userevents
+package producers
 
 import (
 	"context"
 	"kafka-activity-tracker/domain"
-	"kafka-activity-tracker/internal/kafka"
 	"strconv"
 )
 
@@ -12,10 +11,10 @@ type UserEventService interface {
 }
 
 type userEventService struct {
-	producer kafka.Producer
+	producer Producer
 }
 
-func NewUserEventService(producer kafka.Producer) UserEventService {
+func NewUserEventService(producer Producer) UserEventService {
 	return &userEventService{producer: producer}
 }
 

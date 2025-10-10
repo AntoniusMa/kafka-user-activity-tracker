@@ -1,10 +1,9 @@
-package userevents
+package consumers
 
 import (
 	"context"
 	"fmt"
 	"kafka-activity-tracker/domain"
-	"kafka-activity-tracker/internal/kafka"
 	"testing"
 	"time"
 
@@ -21,7 +20,7 @@ type MockConsumer struct {
 	events  []domain.UserEvent
 }
 
-func (c *MockConsumer) ConsumeMessages(ctx context.Context, handler kafka.MessageHandler) error {
+func (c *MockConsumer) ConsumeMessages(ctx context.Context, handler MessageHandler) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -63,7 +62,7 @@ func TestNewEventConsumerService(t *testing.T) {
 
 	repo := MockSessionRepository{}
 	capturedConsumerTopics := []string{}
-	consumerFactory := func(brokers []string, topic string) kafka.Consumer {
+	consumerFactory := func(brokers []string, topic string) Consumer {
 		capturedConsumerTopics = append(capturedConsumerTopics, topic)
 		return &MockConsumer{
 			brokers: brokers,
@@ -101,7 +100,7 @@ func TestListenForUserEvents(t *testing.T) {
 		t.Run(fmt.Sprintf("Should track user events on topic: %s", testCase.topic), func(t *testing.T) {
 			t.Parallel()
 			repo := MockSessionRepository{}
-			var consumerFactory func(brokers []string, topic string) kafka.Consumer
+			var consumerFactory func(brokers []string, topic string) Consumer
 			numMessages := map[domain.UserEventType]int{}
 			numMessages[testCase.expectedEvent.Type] = 1
 			consumerFactory = createConsumerFactory(t, userID, numMessages, eventTime)
@@ -125,9 +124,9 @@ func TestListenForUserEvents(t *testing.T) {
 	}
 }
 
-func createConsumerFactory(t testing.TB, testUserID string, numMessagesForEvent map[domain.UserEventType]int, eventTime time.Time) func(brokers []string, topic string) kafka.Consumer {
+func createConsumerFactory(t testing.TB, testUserID string, numMessagesForEvent map[domain.UserEventType]int, eventTime time.Time) func(brokers []string, topic string) Consumer {
 	t.Helper()
-	return func(brokers []string, topic string) kafka.Consumer {
+	return func(brokers []string, topic string) Consumer {
 		events := []domain.UserEvent{}
 		// generate events, a consumer will only ever have events of one type, as each event is mapped to a different topic and each consumer only consumes one topic
 		switch topic {

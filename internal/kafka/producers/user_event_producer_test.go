@@ -1,4 +1,4 @@
-package userevents
+package producers
 
 import (
 	"context"
