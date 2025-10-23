@@ -31,15 +31,15 @@ func NewUserEventAdapter(db *sql.DB, logger *zap.Logger) domain.UserEventReposit
 func (a *UserEventAdapter) TrackUserEvent(ctx context.Context, event *domain.UserEvent) (*domain.UserEvent, error) {
 	var createdEvent domain.UserEvent
 
-	err := a.db.QueryRowContext(ctx, queryCreateUserEvent, event.UserID, event.Type, event.Timestamp).
-		Scan(&createdEvent.ID, &createdEvent.UserID, &createdEvent.Type, &createdEvent.Timestamp)
+	err := a.db.QueryRowContext(ctx, queryCreateUserEvent, event.SessionID, event.Type, event.Timestamp).
+		Scan(&createdEvent.ID, &createdEvent.SessionID, &createdEvent.Type, &createdEvent.Timestamp)
 
 	if err != nil {
-		a.logger.Error("failed to create user event", zap.Error(err), zap.String("user_id", event.UserID))
+		a.logger.Error("failed to create user event", zap.Error(err), zap.String("session_id", event.SessionID))
 		return nil, fmt.Errorf("failed to create user event: %w", err)
 	}
 
-	a.logger.Debug("user event created successfully", zap.String("event_id", createdEvent.ID))
+	a.logger.Debug("user event created successfully", zap.String("event_id", createdEvent.ID), zap.String("session_id", createdEvent.SessionID))
 	return &createdEvent, nil
 }
 
@@ -54,7 +54,7 @@ func (a *UserEventAdapter) GetEventsForUser(ctx context.Context, userID string) 
 	var events []*domain.UserEvent
 	for rows.Next() {
 		var event domain.UserEvent
-		if err := rows.Scan(&event.ID, &event.UserID, &event.Type, &event.Timestamp); err != nil {
+		if err := rows.Scan(&event.ID, &event.SessionID, &event.Type, &event.Timestamp); err != nil {
 			a.logger.Error("failed to scan user event", zap.Error(err))
 			return nil, fmt.Errorf("failed to scan user event: %w", err)
 		}

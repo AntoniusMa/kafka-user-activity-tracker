@@ -27,12 +27,6 @@ func TestNewUserEventAdapter(t *testing.T) {
 func TestTrackUserEvent(t *testing.T) {
 	logger := zap.NewNop()
 
-	testEvent := &domain.UserEvent{
-		UserID:    "user-123",
-		Type:      domain.LOGIN,
-		Timestamp: time.Now(),
-	}
-
 	t.Run("successfully track user event", func(t *testing.T) {
 		t.Parallel()
 		db, mock, err := sqlmock.New()
@@ -41,11 +35,17 @@ func TestTrackUserEvent(t *testing.T) {
 
 		adapter := NewUserEventAdapter(db, logger)
 
-		rows := sqlmock.NewRows([]string{"id", "user_id", "type", "timestamp"}).
-			AddRow("event-456", testEvent.UserID, testEvent.Type, testEvent.Timestamp)
+		testEvent := &domain.UserEvent{
+			SessionID: "session-789",
+			Type:      domain.LOGIN,
+			Timestamp: time.Now(),
+		}
+
+		rows := sqlmock.NewRows([]string{"id", "session_id", "type", "timestamp"}).
+			AddRow("event-456", testEvent.SessionID, testEvent.Type, testEvent.Timestamp)
 
 		mock.ExpectQuery(`INSERT INTO user_events`).
-			WithArgs(testEvent.UserID, testEvent.Type, testEvent.Timestamp).
+			WithArgs(testEvent.SessionID, testEvent.Type, testEvent.Timestamp).
 			WillReturnRows(rows)
 
 		result, err := adapter.TrackUserEvent(context.Background(), testEvent)
@@ -53,7 +53,7 @@ func TestTrackUserEvent(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, "event-456", result.ID)
-		require.Equal(t, testEvent.UserID, result.UserID)
+		require.Equal(t, testEvent.SessionID, result.SessionID)
 		require.Equal(t, testEvent.Type, result.Type)
 		require.Equal(t, testEvent.Timestamp, result.Timestamp)
 		require.NoError(t, mock.ExpectationsWereMet())
@@ -67,8 +67,14 @@ func TestTrackUserEvent(t *testing.T) {
 
 		adapter := NewUserEventAdapter(db, logger)
 
+		testEvent := &domain.UserEvent{
+			SessionID: "session-789",
+			Type:      domain.LOGIN,
+			Timestamp: time.Now(),
+		}
+
 		mock.ExpectQuery(`INSERT INTO user_events`).
-			WithArgs(testEvent.UserID, testEvent.Type, testEvent.Timestamp).
+			WithArgs(testEvent.SessionID, testEvent.Type, testEvent.Timestamp).
 			WillReturnError(sql.ErrConnDone)
 
 		result, err := adapter.TrackUserEvent(context.Background(), testEvent)
@@ -94,11 +100,13 @@ func TestGetEventsForUser(t *testing.T) {
 
 		adapter := NewUserEventAdapter(db, logger)
 
-		rows := sqlmock.NewRows([]string{"id", "user_id", "type", "timestamp"}).
-			AddRow("event-1", testUserID, domain.LOGIN, testTime).
-			AddRow("event-2", testUserID, domain.PAGE_VIEWS, testTime)
+		sessionID1 := "session-123"
+		sessionID2 := "session-456"
+		rows := sqlmock.NewRows([]string{"id", "session_id", "type", "timestamp"}).
+			AddRow("event-1", sessionID1, domain.LOGIN, testTime).
+			AddRow("event-2", sessionID2, domain.PAGE_VIEWS, testTime)
 
-		mock.ExpectQuery(`SELECT .* FROM user_events WHERE user_id = \$1`).
+		mock.ExpectQuery(`SELECT e\.id, e\.session_id, e\.event_type, e\.timestamp FROM user_events e JOIN user_sessions s ON e\.session_id = s\.session_id WHERE s\.user_id`).
 			WithArgs(testUserID).
 			WillReturnRows(rows)
 
@@ -108,9 +116,10 @@ func TestGetEventsForUser(t *testing.T) {
 		require.NotNil(t, result)
 		require.Len(t, result, 2)
 		require.Equal(t, "event-1", result[0].ID)
-		require.Equal(t, testUserID, result[0].UserID)
+		require.Equal(t, sessionID1, result[0].SessionID)
 		require.Equal(t, domain.LOGIN, result[0].Type)
 		require.Equal(t, "event-2", result[1].ID)
+		require.Equal(t, sessionID2, result[1].SessionID)
 		require.Equal(t, domain.PAGE_VIEWS, result[1].Type)
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -124,9 +133,9 @@ func TestGetEventsForUser(t *testing.T) {
 
 		adapter := NewUserEventAdapter(db, logger)
 
-		rows := sqlmock.NewRows([]string{"id", "user_id", "type", "timestamp"})
+		rows := sqlmock.NewRows([]string{"id", "session_id", "type", "timestamp"})
 
-		mock.ExpectQuery(`SELECT .* FROM user_events WHERE user_id = \$1`).
+		mock.ExpectQuery(`SELECT e\.id, e\.session_id, e\.event_type, e\.timestamp FROM user_events e JOIN user_sessions s ON e\.session_id = s\.session_id WHERE s\.user_id`).
 			WithArgs(testUserID).
 			WillReturnRows(rows)
 
@@ -146,7 +155,7 @@ func TestGetEventsForUser(t *testing.T) {
 
 		adapter := NewUserEventAdapter(db, logger)
 
-		mock.ExpectQuery(`SELECT .* FROM user_events WHERE user_id = \$1`).
+		mock.ExpectQuery(`SELECT e\.id, e\.session_id, e\.event_type, e\.timestamp FROM user_events e JOIN user_sessions s ON e\.session_id = s\.session_id WHERE s\.user_id`).
 			WithArgs(testUserID).
 			WillReturnError(sql.ErrConnDone)
 
@@ -166,11 +175,11 @@ func TestGetEventsForUser(t *testing.T) {
 
 		adapter := NewUserEventAdapter(db, logger)
 
-		rows := sqlmock.NewRows([]string{"id", "user_id", "type", "timestamp"}).
-			AddRow("event-1", testUserID, domain.LOGIN, testTime).
+		rows := sqlmock.NewRows([]string{"id", "session_id", "type", "timestamp"}).
+			AddRow("event-1", "session-123", domain.LOGIN, testTime).
 			AddRow("event-2", nil, domain.PAGE_VIEWS, testTime)
 
-		mock.ExpectQuery(`SELECT .* FROM user_events WHERE user_id = \$1`).
+		mock.ExpectQuery(`SELECT e\.id, e\.session_id, e\.event_type, e\.timestamp FROM user_events e JOIN user_sessions s ON e\.session_id = s\.session_id WHERE s\.user_id`).
 			WithArgs(testUserID).
 			WillReturnRows(rows)
 

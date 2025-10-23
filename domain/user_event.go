@@ -15,7 +15,7 @@ const (
 
 type UserEvent struct {
 	ID        string        `json:"id"`
-	UserID    string        `json:"userID"`
+	SessionID string        `json:"sessionID"`
 	Timestamp time.Time     `json:"timestamp"`
 	Type      UserEventType `json:"type"`
 }
